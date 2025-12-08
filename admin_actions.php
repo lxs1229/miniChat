@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: admin_login.php");
     exit;
@@ -16,12 +17,12 @@ if (!$databaseUrl) {
 $parts = parse_url($databaseUrl);
 
 $host = $parts['host'] ?? 'localhost';
+$user = $parts['user'] ?? null;
+$pass = $parts['pass'] ?? null;
+$dbname = ltrim($parts['path'] ?? '', '/');
 $port = $parts['port'] ?? 5432;
-$user = $parts['user'] ?? '';
-$pass = $parts['pass'] ?? '';
-$db   = ltrim($parts['path'] ?? '', '/');
 
-$dsn = "pgsql:host={$host};port={$port};dbname={$db}";
+$dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
 
 try {
     $pdo = new PDO($dsn, $user, $pass, [
@@ -32,34 +33,74 @@ try {
     die("Erreur connexion PostgreSQL : " . $e->getMessage());
 }
 
-$action = $_POST['action'] ?? '';
 
-/* -------------------------
-   Actions Admin
--------------------------- */
+/* ======================================================
+          🔥 1) SUPPRIMER UN UTILISATEUR (user_delete)
+   ====================================================== */
+if (isset($_POST['user_delete'])) {
+    $pseudo = $_POST['user_delete'];
 
-if ($action === "clear_messages") {
+    if ($pseudo === "admin") {
+        die("Impossible de supprimer l'utilisateur admin.");
+    }
+
+    // Supprimer ses messages
+    $stmt = $pdo->prepare("DELETE FROM messages WHERE pseudo = ?");
+    $stmt->execute([$pseudo]);
+
+    // Supprimer ses salons
+    $stmt = $pdo->prepare("DELETE FROM rooms WHERE created_by = ?");
+    $stmt->execute([$pseudo]);
+
+    // Supprimer historique de connexion
+    $stmt = $pdo->prepare("DELETE FROM connect_history WHERE pseudo = ?");
+    $stmt->execute([$pseudo]);
+
+    // Supprimer l'utilisateur
+    $stmt = $pdo->prepare("DELETE FROM users WHERE pseudo = ?");
+    $stmt->execute([$pseudo]);
+
+    header("Location: admin.php?deleted=" . urlencode($pseudo));
+    exit;
+}
+
+
+/* ======================================================
+          🔥 2) VIDER TOUS LES MESSAGES
+   ====================================================== */
+if (isset($_POST['action']) && $_POST['action'] === 'clear_messages') {
     $pdo->exec("DELETE FROM messages");
-    header("Location: admin.php");
+    header("Location: admin.php?msg_cleared=1");
     exit;
 }
 
-if ($action === "clear_history") {
+
+/* ======================================================
+          🔥 3) VIDER L'HISTORIQUE DE CONNEXION
+   ====================================================== */
+if (isset($_POST['action']) && $_POST['action'] === 'clear_history') {
     $pdo->exec("DELETE FROM connect_history");
-    header("Location: admin.php");
+    header("Location: admin.php?history_cleared=1");
     exit;
 }
 
-if ($action === "backup") {
-    header("Content-Type: text/plain");
-    header("Content-Disposition: attachment; filename=backup_minichat.sql");
 
-    echo "-- Backup Minichat " . date("Y-m-d H:i:s") . "\n\n";
+/* ======================================================
+          🔥 4) GÉNÉRER UNE SAUVEGARDE SQL (Télécharger)
+   ====================================================== */
+if (isset($_POST['action']) && $_POST['action'] === 'backup') {
+    header("Content-Type: text/plain");
+    header("Content-Disposition: attachment; filename=minichat_backup.sql");
+
+    echo "-- MiniChat SQL Backup\n";
+    echo "-- Date: " . date("Y-m-d H:i:s") . "\n\n";
 
     $tables = ["users", "rooms", "messages", "connect_history"];
 
     foreach ($tables as $table) {
+        echo "-- -----------------------------\n";
         echo "-- Table: $table\n";
+        echo "-- -----------------------------\n\n";
 
         $rows = $pdo->query("SELECT * FROM $table")->fetchAll();
 
@@ -69,11 +110,15 @@ if ($action === "backup") {
 
             echo "INSERT INTO $table ($cols) VALUES ($vals);\n";
         }
-        echo "\n";
+        echo "\n\n";
     }
+
     exit;
 }
 
+/* ======================================================
+          🔥 5) Sinon → Retour admin
+   ====================================================== */
 header("Location: admin.php");
 exit;
 ?>
