@@ -39,7 +39,7 @@ try {
 $usersCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $roomsCount = $pdo->query("SELECT COUNT(*) FROM rooms")->fetchColumn();
 $msgCount = $pdo->query("SELECT COUNT(*) FROM messages")->fetchColumn();
-$connCount = $pdo->query("SELECT COUNT(*) FROM Connect_Histoiry")->fetchColumn();
+$connCount = $pdo->query("SELECT COUNT(*) FROM Connect_History")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html>
