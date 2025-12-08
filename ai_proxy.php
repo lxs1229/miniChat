@@ -35,15 +35,13 @@ if (!is_array($messages) || !$messages) {
 // Conserver seulement les 20 derniers échanges pour limiter la charge
 $messages = array_slice($messages, -20);
 
-$secretsPath = __DIR__ . '/../secret.php';
-if (file_exists($secretsPath)) {
-    require_once $secretsPath;
-}
+$apiKey = getenv("GROQ_API_KEY");
 
-$apiKey = getenv("GROQ_API_KEY") ?: (defined('GROQ_API_KEY') ? GROQ_API_KEY : null);
 if (!$apiKey) {
     http_response_code(500);
-    echo json_encode(["error" => "Configure la variable d'environnement GROQ_API_KEY ou ajoute un fichier secret.php contenant la constante GROQ_API_KEY."]);
+    echo json_encode([
+        "error" => "Missing GROQ_API_KEY. Add it in Render → Environment → Add Environment Variable."
+    ]);
     exit;
 }
 
