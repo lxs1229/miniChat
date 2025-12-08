@@ -18,7 +18,7 @@ if ($action === "clear_messages") {
 }
 
 if ($action === "clear_history") {
-    $pdo->exec("DELETE FROM Connect_Histoiry");
+    $pdo->exec("DELETE FROM Connect_History");
     header("Location: admin.php");
     exit;
 }
@@ -29,7 +29,7 @@ if ($action === "backup") {
 
     echo "-- Backup MiniChat " . date("Y-m-d H:i:s") . "\n\n";
 
-    foreach (["users", "rooms", "messages", "Connect_Histoiry"] as $table) {
+    foreach (["users", "rooms", "messages", "Connect_History"] as $table) {
         $rows = $pdo->query("SELECT * FROM $table")->fetchAll(PDO::FETCH_ASSOC);
         echo "\n-- TABLE: $table\n";
         foreach ($rows as $row) {
