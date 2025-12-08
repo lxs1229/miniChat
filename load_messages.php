@@ -7,7 +7,12 @@ if (!isset($_SESSION['pseudo']) || !isset($_SESSION['room_id'])) {
 
 $roomId = $_SESSION['room_id'];
 
-$pdo = new PDO("mysql:host=localhost;dbname=miniChat_db;charset=utf8", "root", "20021229");
+$dsn = getenv("DATABASE_URL");
+if (!$dsn) {
+    die("DATABASE_URL manquant pour la connexion PDO.");
+}
+$pdo = new PDO($dsn);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Vérifier colonne room_id
 $hasRoomColumn = $pdo->query("SHOW COLUMNS FROM message LIKE 'room_id'");

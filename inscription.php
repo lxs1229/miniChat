@@ -1,9 +1,11 @@
-
-
-
 <?php
 
-$pdo = new PDO("mysql:host=localhost;dbname=miniChat_db;charset=utf8", "root", "20021229");
+$dsn = getenv("DATABASE_URL");
+if (!$dsn) {
+    die("DATABASE_URL manquant pour la connexion PDO.");
+}
+$pdo = new PDO($dsn);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pseudo = $_GET['pseudo'];
 $mdp = $_GET['mdp'];
 $check = $pdo->prepare("SELECT COUNT(*) FROM users WHERE pseudo = ?");
