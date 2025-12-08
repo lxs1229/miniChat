@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MiniChat - Connexion</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grid-overlay" aria-hidden="true"></div>
+<div class="page">
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <div class="badge">MiniChat • Edition colorée</div>
+                <h1>Rentre dans la conversation</h1>
+                <p>Un espace lumineux pour retrouver tes messages et discuter avec ton équipe.</p>
+            </div>
+            <div class="pill">Connexion sécurisée</div>
+        </div>
+
+        <form class="form" method="post" action="login.php">
+            <div class="field">
+                <div class="label-row">
+                    <label for="pseudo">Pseudo</label>
+                    <span class="muted">Obligatoire</span>
+                </div>
+                <input id="pseudo" type="text" name="pseudo" placeholder="ex: luna" required>
+            </div>
+
+            <div class="field">
+                <div class="label-row">
+                    <label for="mdp">Mot de passe</label>
+                    <a href="#" class="muted">Mot de passe oublié ?</a>
+                </div>
+                <input id="mdp" type="password" name="mdp" placeholder="••••••••" required>
+            </div>
+
+            <div class="actions">
+                <button class="btn" type="submit">Se connecter</button>
+                <span class="muted">En continuant, tu acceptes les règles de la communauté.</span>
+            </div>
+        </form>
+
+        <p class="helper">
+            Pas encore de compte ?
+            <a href="inscription.html">Créer un profil</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

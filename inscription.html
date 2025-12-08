@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MiniChat - Inscription</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grid-overlay" aria-hidden="true"></div>
+<div class="page">
+    <div class="card">
+        <div class="card__header">
+            <div>
+                <div class="badge">MiniChat • Nouveau profil</div>
+                <h1>On crée ton identité</h1>
+                <p>Choisis un pseudo, un mot de passe et rejoins la discussion en quelques secondes.</p>
+            </div>
+            <div class="pill">Étape unique</div>
+        </div>
+
+        <form class="form" method="get" action="inscription.php">
+            <div class="field">
+                <div class="label-row">
+                    <label for="pseudo">Pseudo</label>
+                    <span class="muted">Visible par les autres</span>
+                </div>
+                <input id="pseudo" type="text" name="pseudo" placeholder="ex: nova" required>
+            </div>
+
+            <div class="field">
+                <div class="label-row">
+                    <label for="mdp">Mot de passe</label>
+                    <span class="muted">Garde-le secret</span>
+                </div>
+                <input id="mdp" type="password" name="mdp" placeholder="••••••••" required>
+            </div>
+
+            <div class="actions">
+                <button class="btn" type="submit">Créer mon compte</button>
+                <a class="btn btn-secondary" href="index.html">Déjà inscrit ? Se connecter</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
