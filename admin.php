@@ -5,17 +5,41 @@ if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     exit;
 }
 
-$dsn = getenv("DATABASE_URL");
-$pdo = new PDO($dsn);
-$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+/* -------------------------
+   Connexion PostgreSQL
+-------------------------- */
+$databaseUrl = getenv("DATABASE_URL");
+if (!$databaseUrl) {
+    die("DATABASE_URL manquant.");
+}
 
-// Count data
+$parts = parse_url($databaseUrl);
+
+$host = $parts['host'];
+$port = $parts['port'];
+$user = $parts['user'];
+$pass = $parts['pass'];
+$dbname = ltrim($parts['path'], '/');
+
+$dsn_pgsql = "pgsql:host={$host};port={$port};dbname={$dbname};";
+
+try {
+    $pdo = new PDO($dsn_pgsql, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+} catch (PDOException $e) {
+    die("Erreur connexion PostgreSQL : " . $e->getMessage());
+}
+
+/* -------------------------
+   Statistiques
+-------------------------- */
 $usersCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $roomsCount = $pdo->query("SELECT COUNT(*) FROM rooms")->fetchColumn();
 $msgCount = $pdo->query("SELECT COUNT(*) FROM message")->fetchColumn();
 $connCount = $pdo->query("SELECT COUNT(*) FROM Connect_Histoire")->fetchColumn();
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -39,21 +63,15 @@ $connCount = $pdo->query("SELECT COUNT(*) FROM Connect_Histoire")->fetchColumn()
             <h3>Actions rapides</h3>
 
             <form action="admin_actions.php" method="post">
-                <button class="btn btn-danger" name="action" value="clear_messages">
-                    🧹 Vider tous les messages
-                </button>
+                <button class="btn btn-danger" name="action" value="clear_messages">🧹 Vider tous les messages</button>
             </form>
 
             <form action="admin_actions.php" method="post">
-                <button class="btn btn-danger" name="action" value="clear_history">
-                    🧹 Vider l'historique de connexion
-                </button>
+                <button class="btn btn-danger" name="action" value="clear_history">🧹 Vider l'historique de connexion</button>
             </form>
 
             <form action="admin_actions.php" method="post">
-                <button class="btn" name="action" value="backup">
-                    💾 Télécharger sauvegarde SQL
-                </button>
+                <button class="btn" name="action" value="backup">💾 Télécharger sauvegarde SQL</button>
             </form>
         </div>
 
