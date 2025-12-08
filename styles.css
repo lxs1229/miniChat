@@ -366,3 +366,26 @@ select {
         align-items: flex-start;
     }
 }
+
+.room-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.btn-danger-small {
+    background: #d9534f;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+.btn-danger-small:hover {
+    background: #c9302c;
+}
