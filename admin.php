@@ -1,0 +1,64 @@
+<?php
+session_start();
+if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+    header("Location: admin_login.php");
+    exit;
+}
+
+$dsn = getenv("DATABASE_URL");
+$pdo = new PDO($dsn);
+$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+// Count data
+$usersCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+$roomsCount = $pdo->query("SELECT COUNT(*) FROM rooms")->fetchColumn();
+$msgCount = $pdo->query("SELECT COUNT(*) FROM message")->fetchColumn();
+$connCount = $pdo->query("SELECT COUNT(*) FROM Connect_Histoire")->fetchColumn();
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <h1>🔐 Panneau Administrateur</h1>
+
+        <div class="panel">
+            <h3>Statistiques</h3>
+            <p>👤 Utilisateurs : <?= $usersCount ?></p>
+            <p>💬 Messages : <?= $msgCount ?></p>
+            <p>🏠 Salons : <?= $roomsCount ?></p>
+            <p>📊 Historique connexions : <?= $connCount ?></p>
+        </div>
+
+        <div class="panel">
+            <h3>Actions rapides</h3>
+
+            <form action="admin_actions.php" method="post">
+                <button class="btn btn-danger" name="action" value="clear_messages">
+                    🧹 Vider tous les messages
+                </button>
+            </form>
+
+            <form action="admin_actions.php" method="post">
+                <button class="btn btn-danger" name="action" value="clear_history">
+                    🧹 Vider l'historique de connexion
+                </button>
+            </form>
+
+            <form action="admin_actions.php" method="post">
+                <button class="btn" name="action" value="backup">
+                    💾 Télécharger sauvegarde SQL
+                </button>
+            </form>
+        </div>
+
+        <a class="btn btn-secondary" href="logout.php">Déconnexion Admin</a>
+    </div>
+</div>
+</body>
+</html>
