@@ -25,7 +25,7 @@ $_SESSION['ai_requests'][] = $now;
 // Lire JSON
 $input = json_decode(file_get_contents("php://input"), true);
 $messages = $input['messages'] ?? null;
-$model = $input['model'] ?? "llama-3.1-70b-versatile";
+$model = $input['model'] ?? "llama-3.3-70b-versatile";
 
 if (!is_array($messages) || count($messages) === 0) {
     http_response_code(400);
