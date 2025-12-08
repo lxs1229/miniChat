@@ -79,84 +79,85 @@ $pseudo = $_SESSION['pseudo'];
     const aiPrompt = document.getElementById("aiPrompt");
     const aiModel = document.getElementById("aiModel");
     const aiSubmit = aiForm.querySelector("button[type=\"submit\"]");
-
-    // Historique minimal conservé côté client pour le contexte
+    
+    // Historique minimum pour Groq
     const history = [
-        { role: "system", content: "Tu es un assistant IA utile pour un mini-chat. Tu réponds en français, de façon concise et pratique." },
+        { role: "system", content: "Tu es un assistant IA utile pour un mini-chat. Tu réponds en français, de façon concise." },
         { role: "assistant", content: "Salut ! Je suis là pour aider." }
     ];
-
-    function renderMessages() {
-        aiMessagesEl.innerHTML = "";
-        history
-            .filter(msg => msg.role !== "system")
-            .forEach(msg => {
-                const div = document.createElement("div");
-                div.className = `ai-bubble ${msg.role === "assistant" ? "ai-assistant" : "ai-user"}`;
-                const header = document.createElement("div");
-                header.className = "pseudo";
-                header.textContent = msg.role === "assistant" ? "Assistant" : "Toi";
-                const body = document.createElement("p");
-                body.className = "message-body";
-                body.textContent = msg.content;
-                div.appendChild(header);
-                div.appendChild(body);
-                aiMessagesEl.appendChild(div);
-            });
-        aiMessagesEl.scrollTop = aiMessagesEl.scrollHeight;
-    }
-
+    
+    // Ajouter message dans UI + historique
     function addMessage(role, content) {
         history.push({ role, content });
-        renderMessages();
+    
+        const div = document.createElement("div");
+        div.className = `ai-bubble ${role === "assistant" ? "ai-assistant" : "ai-user"}`;
+    
+        div.innerHTML = `
+            <div class="pseudo">${role === "assistant" ? "Assistant" : "Toi"}</div>
+            <p class="message-body">${content}</p>
+        `;
+    
+        aiMessagesEl.appendChild(div);
+        aiMessagesEl.scrollTop = aiMessagesEl.scrollHeight;
     }
-
+    
+    // Ajouter message assistant sans entrer dans l'historique
+    function addTemporaryAssistantMessage() {
+        const div = document.createElement("div");
+        div.className = "ai-bubble ai-assistant ai-temp";
+        div.innerHTML = `
+            <div class="pseudo">Assistant</div>
+            <p class="message-body">...</p>
+        `;
+        aiMessagesEl.appendChild(div);
+        aiMessagesEl.scrollTop = aiMessagesEl.scrollHeight;
+    }
+    
+    // Supprimer le placeholder minimal
+    function removeTemporaryAssistantMessage() {
+        const temp = document.querySelector(".ai-temp");
+        if (temp) temp.remove();
+    }
+    
+    // FORM SUBMIT
     aiForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const prompt = aiPrompt.value.trim();
         if (!prompt) return;
-
+    
         addMessage("user", prompt);
         aiPrompt.value = "";
         aiPrompt.focus();
-
-        addMessage("assistant", "...");
-        renderMessages();
-
-        if (aiSubmit) {
-            aiSubmit.disabled = true;
-        }
-
+    
+        addTemporaryAssistantMessage();
+        aiSubmit.disabled = true;
+    
         try {
             const response = await fetch("ai_proxy.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     messages: history,
-                    model: aiModel.value || "llama3-70b-8192"
+                    model: aiModel.value
                 })
             });
-
-            if (!response.ok) {
-                throw new Error(`Erreur réseau ${response.status}`);
-            }
+    
             const data = await response.json();
-            history.pop(); // remove placeholder
+            removeTemporaryAssistantMessage();
+    
             if (data.error) {
-                addMessage("assistant", "Erreur : " + data.error);
+                addMessage("assistant", "⚠️ Erreur : " + data.error);
             } else {
-                addMessage("assistant", data.reply || "Je n'ai pas pu générer de réponse.");
+                addMessage("assistant", data.reply);
             }
         } catch (e) {
-            history.pop(); // remove placeholder
-            addMessage("assistant", "Erreur lors de l'appel IA : " + e.message);
+            removeTemporaryAssistantMessage();
+            addMessage("assistant", "⚠️ Erreur réseau : " + e.message);
         }
-        setTimeout(() => {
-            if (aiSubmit) aiSubmit.disabled = false;
-        }, 1200);
+    
+        aiSubmit.disabled = false;
     });
-
-    renderMessages();
 </script>
 </body>
 </html>
