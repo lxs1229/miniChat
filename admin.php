@@ -4,9 +4,8 @@ if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: admin_login.php");
     exit;
 }
-
 /* -------------------------
-   Connexion PostgreSQL
+   Connexion PostgreSQL (Render Compatible)
 -------------------------- */
 $databaseUrl = getenv("DATABASE_URL");
 if (!$databaseUrl) {
@@ -15,11 +14,13 @@ if (!$databaseUrl) {
 
 $parts = parse_url($databaseUrl);
 
-$host = $parts['host'];
-$port = $parts['port'];
-$user = $parts['user'];
-$pass = $parts['pass'];
-$dbname = ltrim($parts['path'], '/');
+$host = $parts['host'] ?? 'localhost';
+$user = $parts['user'] ?? null;
+$pass = $parts['pass'] ?? null;
+$dbname = ltrim($parts['path'] ?? '', '/');
+
+// Render PostgreSQL does not include port → default = 5432
+$port = $parts['port'] ?? 5432;
 
 $dsn_pgsql = "pgsql:host={$host};port={$port};dbname={$dbname};";
 
