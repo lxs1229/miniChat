@@ -12,13 +12,13 @@ $pdo = new PDO($dsn);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 if ($action === "clear_messages") {
-    $pdo->exec("DELETE FROM message");
+    $pdo->exec("DELETE FROM messages");
     header("Location: admin.php");
     exit;
 }
 
 if ($action === "clear_history") {
-    $pdo->exec("DELETE FROM Connect_Histoire");
+    $pdo->exec("DELETE FROM Connect_Histoiry");
     header("Location: admin.php");
     exit;
 }
@@ -29,7 +29,7 @@ if ($action === "backup") {
 
     echo "-- Backup MiniChat " . date("Y-m-d H:i:s") . "\n\n";
 
-    foreach (["users", "rooms", "message", "Connect_Histoire"] as $table) {
+    foreach (["users", "rooms", "messages", "Connect_Histoiry"] as $table) {
         $rows = $pdo->query("SELECT * FROM $table")->fetchAll(PDO::FETCH_ASSOC);
         echo "\n-- TABLE: $table\n";
         foreach ($rows as $row) {
