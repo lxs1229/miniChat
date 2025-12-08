@@ -90,8 +90,7 @@ if ($trigger) {
             "messages" => [
                 [
                     "role" => "system",
-                    "content" => "content" => 
-                            "你是 AI_BOT，一个嵌入在 MiniChat 里的聊天助手。
+                    "content" => "你是 AI_BOT，一个嵌入在 MiniChat 里的聊天助手。
                             你的任务是根据用户的语言自动回复：
                             - 如果用户说中文，你用中文回复
                             - 如果用户说法语，你用法语回复
