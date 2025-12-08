@@ -6,25 +6,24 @@ if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
 }
 
 /* -------------------------
-   Connexion PostgreSQL (Render Compatible)
+   Connexion PostgreSQL (Render)
 -------------------------- */
 $databaseUrl = getenv("DATABASE_URL");
 if (!$databaseUrl) {
     die("DATABASE_URL manquant.");
 }
 
-$parts = parse_url($databaseUrl);
-
-$host = $parts['host'] ?? 'localhost';
-$user = $parts['user'] ?? null;
-$pass = $parts['pass'] ?? null;
+$parts  = parse_url($databaseUrl);
+$host   = $parts['host'] ?? 'localhost';
+$port   = $parts['port'] ?? 5432;
+$user   = $parts['user'] ?? '';
+$pass   = $parts['pass'] ?? '';
 $dbname = ltrim($parts['path'] ?? '', '/');
-$port = $parts['port'] ?? 5432;
 
-$dsn_pgsql = "pgsql:host={$host};port={$port};dbname={$dbname};";
+$dsn = "pgsql:host={$host};port={$port};dbname={$dbname};";
 
 try {
-    $pdo = new PDO($dsn_pgsql, $user, $pass, [
+    $pdo = new PDO($dsn, $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
@@ -41,9 +40,14 @@ $msgCount   = $pdo->query("SELECT COUNT(*) FROM messages")->fetchColumn();
 $connCount  = $pdo->query("SELECT COUNT(*) FROM connect_history")->fetchColumn();
 
 /* -------------------------
-   Utilisateurs (pour tableau)
+   Charger utilisateurs et salons
 -------------------------- */
-$users = $pdo->query("SELECT pseudo FROM users ORDER BY pseudo ASC")->fetchAll();
+$allUsers = $pdo->query("SELECT pseudo FROM users ORDER BY pseudo ASC")->fetchAll();
+$allRooms = $pdo->query("
+    SELECT id, name, created_by, created_at
+    FROM rooms
+    ORDER BY created_at DESC
+")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html>
@@ -51,78 +55,83 @@ $users = $pdo->query("SELECT pseudo FROM users ORDER BY pseudo ASC")->fetchAll()
     <title>Admin Panel</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 <div class="page">
     <div class="card">
+
         <h1>🔐 Panneau Administrateur</h1>
 
-        <?php if (isset($_GET['deleted'])): ?>
-            <p class="pill" style="background:rgba(255,83,112,0.12); border:1px solid rgba(255,83,112,0.4); color:#fecdd3;">
-                👤 L’utilisateur <strong><?= htmlentities($_GET['deleted']) ?></strong> a été supprimé.
-            </p>
-        <?php endif; ?>
-
+        <!-- ========= STATISTIQUES ========== -->
         <div class="panel">
-            <h3>Statistiques</h3>
+            <h3>📊 Statistiques</h3>
             <p>👤 Utilisateurs : <?= $usersCount ?></p>
             <p>💬 Messages : <?= $msgCount ?></p>
             <p>🏠 Salons : <?= $roomsCount ?></p>
-            <p>📊 Historique connexions : <?= $connCount ?></p>
+            <p>📈 Historique connexions : <?= $connCount ?></p>
         </div>
 
+        <!-- ========= ACTIONS ========= -->
         <div class="panel">
-            <h3>Actions rapides</h3>
+            <h3>⚙️ Actions rapides</h3>
 
             <form action="admin_actions.php" method="post">
-                <button class="btn btn-danger" name="action" value="clear_messages">
-                    🧹 Vider tous les messages
-                </button>
+                <button class="btn btn-danger" name="action" value="clear_messages">🧹 Vider tous les messages</button>
             </form>
 
             <form action="admin_actions.php" method="post">
-                <button class="btn btn-danger" name="action" value="clear_history">
-                    🧹 Vider l'historique de connexion
-                </button>
+                <button class="btn btn-danger" name="action" value="clear_history">🧹 Vider l’historique de connexion</button>
             </form>
 
             <form action="admin_actions.php" method="post">
-                <button class="btn" name="action" value="backup">
-                    💾 Télécharger sauvegarde SQL
-                </button>
+                <button class="btn" name="action" value="backup">💾 Télécharger sauvegarde SQL</button>
             </form>
         </div>
 
-        <!-- -------------------------
-             Gestion des utilisateurs
-        -------------------------- -->
+        <!-- ========= GESTION DES SALONS ========= -->
         <div class="panel">
-            <h3>Gestion des utilisateurs</h3>
+            <h3>🏠 Gestion des salons (supprimer)</h3>
 
-            <table border="1" cellpadding="6" style="width:100%; background:white; border-collapse:collapse;">
-                <tr style="background:#f0f0f0;">
-                    <th>Pseudo</th>
-                    <th>Actions</th>
-                </tr>
+            <?php if (!$allRooms): ?>
+                <p class="muted">Aucun salon existant.</p>
+            <?php else: ?>
+                <?php foreach ($allRooms as $room): ?>
+                    <form method="post" action="admin_actions.php"
+                          onsubmit="return confirm('Supprimer le salon « <?= $room['name'] ?> » ? Tous les messages seront effacés.');">
 
-                <?php foreach ($users as $u): ?>
-                    <tr>
-                        <td><?= htmlentities($u['pseudo']) ?></td>
-                        <td>
-                            <?php if ($u['pseudo'] !== "admin"): ?>
-                                <form action="admin_actions.php" method="post" style="display:inline;">
-                                    <input type="hidden" name="user_delete" value="<?= $u['pseudo'] ?>">
-                                    <button class="btn btn-danger"
-                                            onclick="return confirm('Supprimer l’utilisateur <?= $u['pseudo'] ?> ?')">
-                                        ❌ Supprimer
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <span class="muted">Compte protégé</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
+                        <input type="hidden" name="action" value="delete_room">
+                        <input type="hidden" name="room_id" value="<?= $room['id'] ?>">
+
+                        <div class="room-row">
+                            <span>🏠 <b><?= htmlentities($room['name']) ?></b> — créé par <?= htmlentities($room['created_by']) ?></span>
+                            <button class="btn btn-danger-small">Supprimer</button>
+                        </div>
+                    </form>
                 <?php endforeach; ?>
-            </table>
+            <?php endif; ?>
+        </div>
+
+        <!-- ========= GESTION DES UTILISATEURS ========= -->
+        <div class="panel">
+            <h3>👥 Gestion des utilisateurs</h3>
+
+            <?php if (!$allUsers): ?>
+                <p class="muted">Aucun utilisateur.</p>
+            <?php else: ?>
+                <?php foreach ($allUsers as $u): ?>
+                    <form method="post" action="admin_actions.php"
+                          onsubmit="return confirm('Supprimer l’utilisateur « <?= $u['pseudo'] ?> » ?');">
+
+                        <input type="hidden" name="action" value="delete_user">
+                        <input type="hidden" name="pseudo" value="<?= $u['pseudo'] ?>">
+
+                        <div class="room-row">
+                            <span>👤 <?= htmlentities($u['pseudo']) ?></span>
+                            <button class="btn btn-danger-small">Supprimer</button>
+                        </div>
+                    </form>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
 
         <a class="btn btn-secondary" href="logout.php">Déconnexion Admin</a>
