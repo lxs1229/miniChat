@@ -85,6 +85,22 @@ if (isset($_POST['action']) && $_POST['action'] === 'clear_history') {
 }
 
 
+if ($action === "delete_room") {
+    $roomId = intval($_POST['room_id'] ?? 0);
+
+    if ($roomId > 0) {
+        // Supprimer messages du salon
+        $pdo->prepare("DELETE FROM messages WHERE room_id = ?")->execute([$roomId]);
+
+        // Supprimer salon
+        $pdo->prepare("DELETE FROM rooms WHERE id = ?")->execute([$roomId]);
+
+        header("Location: admin.php?success=room_deleted");
+        exit;
+    }
+}
+
+
 /* ======================================================
           🔥 4) GÉNÉRER UNE SAUVEGARDE SQL (Télécharger)
    ====================================================== */
