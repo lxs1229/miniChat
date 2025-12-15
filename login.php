@@ -1,95 +1,123 @@
 <?php
 session_start();
 
-// ---- Récupération IP client ----
-function getClientIpData(): array {
+/* ======================================================
+   1) Récupération IP client (Cloudflare / Render OK)
+====================================================== */
+function getClientIp(): string {
     $keys = [
-        'HTTP_CF_CONNECTING_IP',
+        'HTTP_CF_CONNECTING_IP', // Cloudflare
         'HTTP_X_FORWARDED_FOR',
         'HTTP_X_REAL_IP',
         'REMOTE_ADDR',
     ];
 
-    $forwardedRaw = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
-
     foreach ($keys as $key) {
         if (!empty($_SERVER[$key])) {
-            $ipList = explode(',', $_SERVER[$key]);
-            $candidate = trim($ipList[0]);
-            if (filter_var($candidate, FILTER_VALIDATE_IP)) {
-                return ['ip' => $candidate, 'chain' => $forwardedRaw];
+            $ip = explode(',', $_SERVER[$key])[0];
+            $ip = trim($ip);
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return substr($ip, 0, 45);
             }
         }
     }
-    return ['ip' => '0.0.0.0', 'chain' => $forwardedRaw];
+    return '0.0.0.0';
 }
 
-$ipData = getClientIpData();
-$ip = substr($ipData['ip'], 0, 45);
-$ipChain = $ipData['chain'];
+$ip = getClientIp();
 
-// ---- Connexion PostgreSQL Render ----
+/* ======================================================
+   2) Connexion PostgreSQL (Render)
+====================================================== */
 $databaseUrl = getenv("DATABASE_URL");
 if (!$databaseUrl) {
-    die("DATABASE_URL manquant pour la connexion PDO.");
+    die("DATABASE_URL manquant.");
 }
 
-// Parse postgres:// URL en DSN pgsql:
 $parts = parse_url($databaseUrl);
-
-$host = $parts['host'];
+$host = $parts['host'] ?? 'localhost';
 $port = $parts['port'] ?? 5432;
-$user = $parts['user'];
-$pass = $parts['pass'];
-$db   = ltrim($parts['path'], '/');
+$user = $parts['user'] ?? '';
+$pass = $parts['pass'] ?? '';
+$db   = ltrim($parts['path'] ?? '', '/');
 
 $dsn = "pgsql:host={$host};port={$port};dbname={$db}";
 
 try {
     $pdo = new PDO($dsn, $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 } catch (PDOException $e) {
     die("Erreur connexion PostgreSQL : " . $e->getMessage());
 }
 
-// ---- Récupérer données POST ----
-$pseudo = $_POST['pseudo'] ?? '';
-$mdp = $_POST['mdp'] ?? '';
+/* ======================================================
+   3) Récupération POST
+====================================================== */
+$pseudo = trim($_POST['pseudo'] ?? '');
+$mdp    = $_POST['mdp'] ?? '';
 
-// ---- Vérifier si pseudo existe ----
+if ($pseudo === '' || $mdp === '') {
+    $_SESSION['login_error'] = "Champs manquants";
+    header("Location: index.html");
+    exit;
+}
+
+/* ======================================================
+   4) Vérification utilisateur
+====================================================== */
 $stmt = $pdo->prepare("SELECT mdp FROM users WHERE pseudo = ?");
 $stmt->execute([$pseudo]);
-$user = $stmt->fetch();
+$userRow = $stmt->fetch();
 
-if (!$user) {
+if (!$userRow) {
     $_SESSION['login_error'] = "Pseudo inconnu";
     header("Location: index.html");
     exit;
 }
 
-// ---- Vérifier mot de passe ----
-if ($mdp === $user['mdp']) {
+$dbPassword = $userRow['mdp'];
 
-    // Historique connexion (table correct = connect_history)
-    try {
-        $insert = $pdo->prepare("INSERT INTO connect_history (pseudo, ip_connection) VALUES (?, ?)");
-        $insert->execute([$pseudo, $ip]);
-    } catch (PDOException $e) {
-        error_log("MiniChat connexion log failed: " . $e->getMessage());
-    }
+/* ======================================================
+   5) Cas A : mot de passe déjà hashé (normal)
+====================================================== */
+if (password_verify($mdp, $dbPassword)) {
 
-    if ($ipChain) {
-        error_log("MiniChat connexion: pseudo={$pseudo}, ip={$ip}, xff={$ipChain}");
-    }
+    // Log connexion
+    $pdo->prepare("
+        INSERT INTO connect_history (pseudo, ip_connection, time)
+        VALUES (?, ?, NOW())
+    ")->execute([$pseudo, $ip]);
 
     $_SESSION['pseudo'] = $pseudo;
     header("Location: rooms.php");
     exit;
 }
 
-// ---- Mot de passe incorrect ----
+/* ======================================================
+   6) Cas B : ancien utilisateur (mot de passe en clair)
+====================================================== */
+if ($mdp === $dbPassword) {
+
+    // 🔐 Upgrade automatique vers hash sécurisé
+    $newHash = password_hash($mdp, PASSWORD_DEFAULT);
+    $pdo->prepare("UPDATE users SET mdp = ? WHERE pseudo = ?")
+        ->execute([$newHash, $pseudo]);
+
+    $pdo->prepare("
+        INSERT INTO connect_history (pseudo, ip_connection, time)
+        VALUES (?, ?, NOW())
+    ")->execute([$pseudo, $ip]);
+
+    $_SESSION['pseudo'] = $pseudo;
+    header("Location: rooms.php");
+    exit;
+}
+
+/* ======================================================
+   7) Échec
+====================================================== */
 $_SESSION['login_error'] = "Mot de passe incorrect";
 header("Location: index.html");
 exit;
