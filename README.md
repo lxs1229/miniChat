@@ -41,6 +41,9 @@ Initialisation : exécuter `init_db.php` ou appliquer `create_table_miniChat.sql
 
 ## 🚀 Déploiement & exécution
 
+### 🌐 Démo en ligne
+- Instance publique : https://chat.liuxs.my
+
 ### Variables d'environnement
 | Nom | Description |
 |-----|-------------|
