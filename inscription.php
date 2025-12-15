@@ -47,7 +47,12 @@ if ($exists > 0) {
 
 // ---- Insérer utilisateur ----
 $insert = $pdo->prepare("INSERT INTO users (pseudo, mdp) VALUES (?, ?)");
-$insert->execute([$pseudo, $mdp]);
+$hash = password_hash($mdp, PASSWORD_DEFAULT);
+
+$insert = $pdo->prepare(
+    "INSERT INTO users (pseudo, mdp) VALUES (?, ?)"
+);
+$insert->execute([$pseudo, $hash]);
 
 // ---- Redirection ----
 header("Location: index.html?register=success");
