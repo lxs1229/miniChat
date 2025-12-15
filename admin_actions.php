@@ -1,110 +1,104 @@
 <?php
+ob_start();
 session_start();
 
+/* -------------------------
+   Sécurité admin
+-------------------------- */
 if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header("Location: admin_login.php");
     exit;
 }
 
 /* -------------------------
-   Connexion PostgreSQL (Render Compatible)
+   Connexion PostgreSQL (Render)
 -------------------------- */
 $databaseUrl = getenv("DATABASE_URL");
 if (!$databaseUrl) {
-    die("DATABASE_URL manquant.");
+    header("Location: admin.php?err=db_url");
+    exit;
 }
 
 $parts = parse_url($databaseUrl);
-
 $host = $parts['host'] ?? 'localhost';
-$user = $parts['user'] ?? null;
-$pass = $parts['pass'] ?? null;
-$dbname = ltrim($parts['path'] ?? '', '/');
 $port = $parts['port'] ?? 5432;
+$user = $parts['user'] ?? '';
+$pass = $parts['pass'] ?? '';
+$db   = ltrim($parts['path'] ?? '', '/');
 
-$dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
+$dsn = "pgsql:host={$host};port={$port};dbname={$db}";
 
 try {
     $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 } catch (PDOException $e) {
-    die("Erreur connexion PostgreSQL : " . $e->getMessage());
-}
-
-
-/* ======================================================
-          🔥 1) SUPPRIMER UN UTILISATEUR (user_delete)
-   ====================================================== */
-if (isset($_POST['user_delete'])) {
-    $pseudo = $_POST['user_delete'];
-
-    if ($pseudo === "admin") {
-        die("Impossible de supprimer l'utilisateur admin.");
-    }
-
-    // Supprimer ses messages
-    $stmt = $pdo->prepare("DELETE FROM messages WHERE pseudo = ?");
-    $stmt->execute([$pseudo]);
-
-    // Supprimer ses salons
-    $stmt = $pdo->prepare("DELETE FROM rooms WHERE created_by = ?");
-    $stmt->execute([$pseudo]);
-
-    // Supprimer historique de connexion
-    $stmt = $pdo->prepare("DELETE FROM connect_history WHERE pseudo = ?");
-    $stmt->execute([$pseudo]);
-
-    // Supprimer l'utilisateur
-    $stmt = $pdo->prepare("DELETE FROM users WHERE pseudo = ?");
-    $stmt->execute([$pseudo]);
-
-    header("Location: admin.php?deleted=" . urlencode($pseudo));
+    header("Location: admin.php?err=db_connect");
     exit;
 }
 
+/* -------------------------
+   🔑 ACTION (clé unique)
+-------------------------- */
+$action = $_POST['action'] ?? '';
 
 /* ======================================================
-          🔥 2) VIDER TOUS LES MESSAGES
-   ====================================================== */
-if (isset($_POST['action']) && $_POST['action'] === 'clear_messages') {
-    $pdo->exec("DELETE FROM messages");
-    header("Location: admin.php?msg_cleared=1");
-    exit;
-}
+   1️⃣ SUPPRIMER UN UTILISATEUR
+====================================================== */
+if ($action === "delete_user") {
+    $pseudo = $_POST['pseudo'] ?? '';
 
-
-/* ======================================================
-          🔥 3) VIDER L'HISTORIQUE DE CONNEXION
-   ====================================================== */
-if (isset($_POST['action']) && $_POST['action'] === 'clear_history') {
-    $pdo->exec("DELETE FROM connect_history");
-    header("Location: admin.php?history_cleared=1");
-    exit;
-}
-
-
-if ($action === "delete_room") {
-    $roomId = intval($_POST['room_id'] ?? 0);
-
-    if ($roomId > 0) {
-        // Supprimer messages du salon
-        $pdo->prepare("DELETE FROM messages WHERE room_id = ?")->execute([$roomId]);
-
-        // Supprimer salon
-        $pdo->prepare("DELETE FROM rooms WHERE id = ?")->execute([$roomId]);
-
-        header("Location: admin.php?success=room_deleted");
+    if ($pseudo === '' || $pseudo === 'admin') {
+        header("Location: admin.php?err=delete_admin");
         exit;
     }
+
+    $pdo->prepare("DELETE FROM messages WHERE pseudo = ?")->execute([$pseudo]);
+    $pdo->prepare("DELETE FROM rooms WHERE created_by = ?")->execute([$pseudo]);
+    $pdo->prepare("DELETE FROM connect_history WHERE pseudo = ?")->execute([$pseudo]);
+    $pdo->prepare("DELETE FROM users WHERE pseudo = ?")->execute([$pseudo]);
+
+    header("Location: admin.php?ok=user_deleted");
+    exit;
 }
 
+/* ======================================================
+   2️⃣ VIDER TOUS LES MESSAGES
+====================================================== */
+if ($action === "clear_messages") {
+    $pdo->exec("DELETE FROM messages");
+    header("Location: admin.php?ok=messages_cleared");
+    exit;
+}
 
 /* ======================================================
-          🔥 4) GÉNÉRER UNE SAUVEGARDE SQL (Télécharger)
-   ====================================================== */
-if (isset($_POST['action']) && $_POST['action'] === 'backup') {
+   3️⃣ VIDER HISTORIQUE CONNEXIONS
+====================================================== */
+if ($action === "clear_history") {
+    $pdo->exec("DELETE FROM connect_history");
+    header("Location: admin.php?ok=history_cleared");
+    exit;
+}
+
+/* ======================================================
+   4️⃣ SUPPRIMER UN SALON
+====================================================== */
+if ($action === "delete_room") {
+    $roomId = (int)($_POST['room_id'] ?? 0);
+
+    if ($roomId > 0) {
+        $pdo->prepare("DELETE FROM messages WHERE room_id = ?")->execute([$roomId]);
+        $pdo->prepare("DELETE FROM rooms WHERE id = ?")->execute([$roomId]);
+    }
+
+    header("Location: admin.php?ok=room_deleted");
+    exit;
+}
+
+/* ======================================================
+   5️⃣ SAUVEGARDE SQL
+====================================================== */
+if ($action === "backup") {
     header("Content-Type: text/plain");
     header("Content-Disposition: attachment; filename=minichat_backup.sql");
 
@@ -114,27 +108,21 @@ if (isset($_POST['action']) && $_POST['action'] === 'backup') {
     $tables = ["users", "rooms", "messages", "connect_history"];
 
     foreach ($tables as $table) {
-        echo "-- -----------------------------\n";
         echo "-- Table: $table\n";
-        echo "-- -----------------------------\n\n";
-
         $rows = $pdo->query("SELECT * FROM $table")->fetchAll();
 
         foreach ($rows as $row) {
-            $cols = implode(", ", array_map(fn($c) => "\"$c\"", array_keys($row)));
-            $vals = implode(", ", array_map(fn($v) => $pdo->quote($v), array_values($row)));
-
+            $cols = implode(", ", array_keys($row));
+            $vals = implode(", ", array_map([$pdo, 'quote'], array_values($row)));
             echo "INSERT INTO $table ($cols) VALUES ($vals);\n";
         }
-        echo "\n\n";
+        echo "\n";
     }
-
     exit;
 }
 
 /* ======================================================
-          🔥 5) Sinon → Retour admin
-   ====================================================== */
+   ❌ Action inconnue → retour admin
+====================================================== */
 header("Location: admin.php");
 exit;
-?>
