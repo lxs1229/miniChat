@@ -1,0 +1,116 @@
+:root {
+    --hub-max: 1100px;
+}
+
+.hub {
+    position: relative;
+    z-index: 1;
+    width: min(var(--hub-max), calc(100% - 36px));
+    margin: 0 auto;
+    padding: 44px 0 60px;
+}
+
+.hub__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.hub__meta {
+    text-align: right;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.hub__meta-title {
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    margin-bottom: 4px;
+}
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.project-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+}
+
+.project-card--ghost {
+    background: rgba(255, 255, 255, 0.03);
+    border-style: dashed;
+}
+
+.project-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.project-card__title {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+}
+
+.project-card__desc {
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.project-card__tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5f5;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.project-card__body .layout-split {
+    gap: 12px;
+}
+
+.hub-list {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    color: var(--muted);
+}
+
+@media (max-width: 760px) {
+    .hub__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hub__meta {
+        width: 100%;
+        text-align: left;
+    }
+}
+

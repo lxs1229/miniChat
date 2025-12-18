@@ -37,7 +37,7 @@ Tables utilisées :
 - `messages` — messages liés à un salon et à un pseudo, timestamps automatiques.【F:chat.php†L37-L78】【F:send_message.php†L55-L86】
 - `connect_history` — journalisation des connexions (pseudo, IP, date).【F:login.php†L55-L68】
 
-Initialisation : exécuter `init_db.php` ou appliquer `create_table_miniChat.sql`/`init_minichat.sql` pour créer les tables avant utilisation.
+Initialisation : exécuter `init_db.php` ou appliquer `db/create_table_miniChat.sql` / `db/init_minichat.sql` pour créer les tables avant utilisation.
 
 ## 🚀 Déploiement & exécution
 
@@ -60,19 +60,23 @@ Puis ouvrir `http://localhost:10000/index.html` pour accéder à la page de conn
 ## 📂 Structure du projet
 ```text
 /minichat
-├── index.html               # Connexion
-├── inscription.html/.php    # Création de compte
-├── login.php / logout.php   # Authentification
-├── rooms.php                # Gestion des salons
-├── chat.php                 # Interface de chat + auto-refresh
-├── send_message.php         # Envoi + bot IA dans le salon
-├── load_messages.php        # Récupération des messages (polling)
-├── ai.php / ai_proxy.php    # Assistant IA dédié
-├── fetch_models.php         # Liste dynamique des modèles Groq
-├── admin_login.php          # Authentification admin
-├── admin.php / admin_actions.php / admin_verify.php
-├── init_db.php              # Création des tables
-├── styles.css               # UI
+├── index.html                 # Connexion
+├── inscription.html           # Création de compte (form)
+├── styles.css                 # UI
+├── robots.txt / sitemap.xml   # SEO
+├── *.php                      # Entrées (wrappers) compatibles
+├── src/                       # Code PHP réel
+│   ├── login.php / logout.php
+│   ├── rooms.php / chat.php
+│   ├── send_message.php / load_messages.php
+│   ├── ai.php / ai_proxy.php / fetch_models.php
+│   ├── admin*.php
+│   └── init_db.php
+├── db/                        # Scripts SQL (init)
+│   ├── create_table_miniChat.sql
+│   └── init_minichat.sql
+├── games/
+│   └── 2048/                   # Mini-jeu 2048 (clavier) + sauvegarde DB
 └── README.md
 ```
 

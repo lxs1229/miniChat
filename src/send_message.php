@@ -1,0 +1,123 @@
+<?php
+session_start();
+
+// Vérifier session utilisateur
+if (!isset($_SESSION['pseudo'])) {
+    header("Location: index.html");
+    exit;
+}
+
+$roomId = $_SESSION['room_id'] ?? null;
+$pseudo = $_SESSION['pseudo'];
+
+if (!$roomId) {
+    header("Location: chat.php");
+    exit;
+}
+
+// Récupérer texte envoyé
+$message = trim($_POST['message'] ?? '');
+if ($message === '') {
+    header("Location: chat.php");
+    exit;
+}
+
+/* ------------------------------
+   Connexion PostgreSQL (Render)
+--------------------------------*/
+require __DIR__ . "/db.php";
+
+/* ------------------------------
+   Vérifier existence table messages
+--------------------------------*/
+$tableExists = $pdo->query("SELECT to_regclass('public.messages')")->fetchColumn();
+if ($tableExists === null) {
+    die("⚠ Table messages absente. Lance init_db.php pour créer la base.");
+}
+
+/* ------------------------------
+   Insérer message utilisateur
+--------------------------------*/
+$stmt = $pdo->prepare("
+    INSERT INTO messages (pseudo, message, room_id)
+    VALUES (?, ?, ?)
+");
+$stmt->execute([$pseudo, $message, $roomId]);
+
+
+
+/* ============================================================
+                     🤖 AI BOT AUTO REPLY
+============================================================ */
+
+// Détecter si l'utilisateur appelle le bot
+$trigger = false;
+
+// Exemple : "@ai comment ça va ?"  → déclenche
+if (stripos($message, "@ai") !== false || stripos($message, "@bot") !== false) {
+    $trigger = true;
+}
+
+if ($trigger) {
+    $apiKey = getenv("GROQ_API_KEY");
+
+    if ($apiKey) {
+
+        // Préparer le prompt pour Groq
+        $payload = [
+            "model" => "llama-3.1-8b-instant",
+            "messages" => [
+                [
+                    "role" => "system",
+                    "content" => "你是 AI_BOT，一个嵌入在 MiniChat 里的聊天助手。
+                            你的任务是根据用户的语言自动回复：
+                            - 如果用户说中文，你用中文回复
+                            - 如果用户说法语，你用法语回复
+                            - 如果用户说英文，你用英文回复
+                            
+                            要求：
+                            - 回答简短、有用、友好
+                            - 不要说你是 AI 或模型
+                            - 保持像普通用户一样的语气"
+                ],
+                [
+                    "role" => "user",
+                    "content" => $message
+                ]
+            ],
+            "max_tokens" => 120
+        ];
+
+        // Appel API Groq
+        $ch = curl_init("https://api.groq.com/openai/v1/chat/completions");
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer {$apiKey}",
+                "Content-Type: application/json"
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload)
+        ]);
+
+        $raw = curl_exec($ch);
+        $data = json_decode($raw, true);
+        curl_close($ch);
+
+        // Récupérer réponse IA
+        $botReply = $data["choices"][0]["message"]["content"] ?? "Désolé, je n'ai pas compris.";
+
+        // Insérer réponse bot dans la DB
+        $pdo->prepare("INSERT INTO messages (pseudo, message, room_id) VALUES ('AI_BOT', ?, ?)")
+            ->execute([$botReply, $roomId]);
+    }
+}
+
+
+
+/* ------------------------------
+   Retour au chat
+--------------------------------*/
+header("Location: chat.php");
+exit;
+?>

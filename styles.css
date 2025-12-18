@@ -195,6 +195,17 @@ select {
     border: 1px solid var(--stroke);
 }
 
+.lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary.is-active {
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.14);
+}
+
 .layout-split {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

@@ -1,0 +1,69 @@
+{
+  "projects": [
+    {
+      "id": "minichat",
+      "type": "minichat",
+      "title": {
+        "zh": "MiniChat",
+        "en": "MiniChat",
+        "fr": "MiniChat"
+      },
+      "description": {
+        "zh": "Rooms + Chat + IA + Admin（PHP + PostgreSQL）",
+        "en": "Rooms + Chat + AI + Admin (PHP + PostgreSQL)",
+        "fr": "Rooms + Chat + IA + Admin (PHP + PostgreSQL)"
+      },
+      "tags": ["PHP", "PostgreSQL", "AI"]
+    },
+    {
+      "id": "game-2048",
+      "type": "generic",
+      "title": {
+        "zh": "2048",
+        "en": "2048",
+        "fr": "2048"
+      },
+      "description": {
+        "zh": "键盘控制 + 进度/分数保存 + 排行榜（需要登录）",
+        "en": "Keyboard control + save progress/score + leaderboard (login required)",
+        "fr": "Contrôle clavier + sauvegarde + classement (connexion requise)"
+      },
+      "tags": ["Game", "2048"],
+      "links": [
+        {
+          "href": "games/2048/index.php",
+          "label": {
+            "zh": "开始游戏",
+            "en": "Play",
+            "fr": "Jouer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "minesweeper",
+      "type": "generic",
+      "title": {
+        "zh": "扫雷",
+        "en": "Minesweeper",
+        "fr": "Démineur"
+      },
+      "description": {
+        "zh": "可选难度 + 存档 + 排行榜（需要登录）",
+        "en": "Difficulty selection + save + leaderboard (login required)",
+        "fr": "Choix de difficulté + sauvegarde + classement (connexion requise)"
+      },
+      "tags": ["Game", "Minesweeper"],
+      "links": [
+        {
+          "href": "games/minesweeper/index.php",
+          "label": {
+            "zh": "开始游戏",
+            "en": "Play",
+            "fr": "Jouer"
+          }
+        }
+      ]
+    }
+  ]
+}
