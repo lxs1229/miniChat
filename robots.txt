@@ -1,4 +1,11 @@
 User-agent: *
-Allow: /
+Disallow: /chat.php
+Disallow: /login.php
+Disallow: /logout.php
+Disallow: /send_message.php
+Disallow: /ai_proxy.php
+Disallow: /admin
+Disallow: /src/
 
-Sitemap: https://www.liuxs.my/sitemap.xml
+Allow: /
+Sitemap: https://liuxs.my/sitemap.xml
