@@ -2,7 +2,7 @@
 session_start();
 require __DIR__ . "/i18n.php";
 if (!isset($_SESSION['pseudo'])) {
-    header("Location: index.html");
+    header("Location: /index.html?lang=" . urlencode(minichat_lang()) . "&next=" . urlencode("/rooms.php"));
     exit;
 }
 
@@ -128,7 +128,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_
 <html lang="<?= htmlentities(minichat_html_lang()) ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-width">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlentities(t("rooms_title")) ?> • MiniChat</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -151,6 +151,8 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_
 
                 <!-- ⭐ TON BOUTON IA EST JUSTE ICI -->
                 <a class="btn btn-secondary" href="ai.php"><?= htmlentities(t("nav_ai")) ?></a>
+                <a class="btn btn-secondary" href="leaderboard.php"><?= htmlentities(t("nav_leaderboard")) ?></a>
+                <a class="btn btn-secondary" href="profile.php"><?= htmlentities(t("nav_profile")) ?></a>
 
                 <a class="btn btn-secondary" href="chat.php"><?= htmlentities(t("nav_chat")) ?></a>
                 <a class="btn btn-secondary" href="logout.php"><?= htmlentities(t("nav_logout")) ?></a>

@@ -12,6 +12,7 @@
   const leaderboardEl = document.getElementById("leaderboard");
   const newBtn = document.getElementById("newGame");
   const contBtn = document.getElementById("continueGame");
+  const flagModeBtn = document.getElementById("flagMode");
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlayTitle");
   const overlayNew = document.getElementById("overlayNew");
@@ -22,11 +23,15 @@
     expert: { w: 30, h: 16, m: 99, cell: 26 },
   };
 
+  const LONG_PRESS_MS = 420;
+  const TAP_MAX_MOVE_PX = 14;
+
   const state = {
     difficulty: "beginner",
     w: 9,
     h: 9,
     mines: 10,
+    flagMode: false,
     firstClick: true,
     startedAt: 0,
     elapsedMs: 0,
@@ -40,6 +45,20 @@
     saveTimer: null,
     bestTimeMs: null,
   };
+
+  let suppressClickUntil = 0;
+  let lastTapAt = 0;
+  let lastTapIdx = -1;
+
+  function setFlagMode(on) {
+    state.flagMode = Boolean(on);
+    if (!flagModeBtn) return;
+    flagModeBtn.classList.toggle("is-active", state.flagMode);
+    flagModeBtn.setAttribute("aria-pressed", state.flagMode ? "true" : "false");
+    const onLabel = cfg.labels.flagModeOn || "🚩 Flag: ON";
+    const offLabel = cfg.labels.flagModeOff || "🚩 Flag: OFF";
+    flagModeBtn.textContent = state.flagMode ? onLabel : offLabel;
+  }
 
   function setStatus(type) {
     if (!saveStatusEl) return;
@@ -149,14 +168,27 @@
     if (state.flagged[i]) classes.push("flagged");
     if (state.mine[i]) classes.push("mine");
     const n = state.adj[i];
+    if (state.revealed[i] && !state.mine[i] && n === 0) classes.push("empty");
     if (state.revealed[i] && !state.mine[i] && n > 0) classes.push(`n${n}`);
     return classes.join(" ");
+  }
+
+  function computeCellPx(level) {
+    const maxCell = Number(level.cell) || 30;
+    const minCell = 22;
+    const cols = Math.max(1, state.w);
+    const containerW = (boardEl && boardEl.parentElement && boardEl.parentElement.clientWidth) || window.innerWidth || 360;
+    const gap = 8;
+    const pad = 24; // ms-board padding 12px * 2
+    const candidate = Math.floor((containerW - pad - gap * (cols - 1)) / cols);
+    if (!Number.isFinite(candidate) || candidate <= 0) return maxCell;
+    return Math.max(minCell, Math.min(maxCell, candidate));
   }
 
   function renderBoard() {
     boardEl.style.setProperty("--cols", String(state.w));
     const level = LEVELS[state.difficulty];
-    boardEl.style.setProperty("--cell", `${level.cell}px`);
+    boardEl.style.setProperty("--cell", `${computeCellPx(level)}px`);
     boardEl.innerHTML = "";
     const n = state.w * state.h;
     for (let i = 0; i < n; i++) {
@@ -166,8 +198,13 @@
       b.dataset.i = String(i);
       b.textContent = cellText(i);
       b.addEventListener("click", (e) => {
+        if (performance.now() < suppressClickUntil) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
-        onReveal(i);
+        if (state.flagMode) onFlag(i);
+        else onReveal(i);
       });
       b.addEventListener("contextmenu", (e) => {
         e.preventDefault();
@@ -177,6 +214,68 @@
         e.preventDefault();
         onChord(i);
       });
+
+      let longPressTimer = null;
+      let longPressFired = false;
+      let downX = 0;
+      let downY = 0;
+
+      b.addEventListener("pointerdown", (e) => {
+        if (state.over) return;
+        if (e.pointerType === "mouse" && e.button !== 0 && e.button !== 2) return;
+
+        downX = e.clientX;
+        downY = e.clientY;
+        longPressFired = false;
+
+        if (e.pointerType === "touch") {
+          e.preventDefault();
+          try {
+            b.setPointerCapture(e.pointerId);
+          } catch {
+            // ignore
+          }
+          longPressTimer = setTimeout(() => {
+            longPressFired = true;
+            suppressClickUntil = performance.now() + 1200;
+            onFlag(i);
+          }, LONG_PRESS_MS);
+        }
+      });
+
+      function clearLongPress() {
+        if (longPressTimer) clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+
+      b.addEventListener("pointerup", (e) => {
+        clearLongPress();
+        if (state.over) return;
+
+        const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+        if (moved > TAP_MAX_MOVE_PX) return;
+        if (longPressFired) return;
+
+        if (e.pointerType === "touch") {
+          suppressClickUntil = performance.now() + 500;
+          const now = performance.now();
+          if (state.revealed[i] && lastTapIdx === i && now - lastTapAt < 280) {
+            lastTapAt = 0;
+            lastTapIdx = -1;
+            onChord(i);
+            return;
+          }
+          lastTapAt = now;
+          lastTapIdx = i;
+          if (state.flagMode) onFlag(i);
+          else onReveal(i);
+          return;
+        }
+
+        // Right-click flagging is handled by the `contextmenu` listener above.
+      });
+
+      b.addEventListener("pointercancel", clearLongPress);
       boardEl.appendChild(b);
     }
     renderStats();
@@ -456,10 +555,17 @@
     const loaded = await loadSave();
     if (loaded) applyLoadedState(loaded);
   });
+  flagModeBtn?.addEventListener("click", () => setFlagMode(!state.flagMode));
 
   // init
   contBtn.disabled = true;
   setStatus(canPersist ? "" : "login");
+  setFlagMode(false);
   applyDifficulty("beginner");
-})();
 
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => renderBoard(), 120);
+  });
+})();

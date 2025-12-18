@@ -31,6 +31,10 @@ $lang = minichat_lang();
                     <div class="pill"><?= htmlentities(t("connected_as", ["pseudo" => $pseudo])) ?></div>
                 <?php endif; ?>
                 <?= render_lang_switcher() ?>
+                <a class="btn btn-secondary" href="/leaderboard.php"><?= htmlentities(t("nav_leaderboard")) ?></a>
+                <?php if ($isLoggedIn): ?>
+                    <a class="btn btn-secondary" href="/profile.php"><?= htmlentities(t("nav_profile")) ?></a>
+                <?php endif; ?>
                 <a class="btn btn-secondary" href="/rooms.php"><?= htmlentities(t("rooms_title")) ?></a>
                 <?php if ($isLoggedIn): ?>
                     <a class="btn btn-secondary" href="/logout.php"><?= htmlentities(t("nav_logout")) ?></a>
@@ -85,6 +89,7 @@ $lang = minichat_lang();
                         <div class="actions ms-actions">
                             <button id="newGame" class="btn"><?= htmlentities(t("game_ms_new")) ?></button>
                             <button id="continueGame" class="btn btn-secondary"><?= htmlentities(t("game_ms_continue")) ?></button>
+                            <button id="flagMode" class="btn btn-secondary" type="button"></button>
                         </div>
 
                         <div id="saveStatus" class="pill muted ms-status"></div>
@@ -131,6 +136,8 @@ window.__MINICHAT_MS__ = <?= json_encode([
         "saved" => t("game_ms_saved"),
         "saveError" => t("game_ms_save_error"),
         "loginToSave" => t("game_ms_login_to_save"),
+        "flagModeOn" => t("game_ms_flag_mode_on"),
+        "flagModeOff" => t("game_ms_flag_mode_off"),
     ],
 ], JSON_UNESCAPED_UNICODE) ?>;
 </script>

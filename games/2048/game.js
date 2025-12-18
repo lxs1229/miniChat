@@ -473,6 +473,39 @@
     move(dir);
   }
 
+  function bindSwipeControls() {
+    if (!boardEl) return;
+    const MIN_SWIPE_PX = 26;
+    let active = null; // {id, x, y}
+
+    boardEl.addEventListener("pointerdown", (e) => {
+      if (state.animating || state.isOver) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      active = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      try {
+        boardEl.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    });
+
+    function endSwipe(e) {
+      if (!active || active.id !== e.pointerId) return;
+      const dx = e.clientX - active.x;
+      const dy = e.clientY - active.y;
+      active = null;
+
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      if (Math.max(ax, ay) < MIN_SWIPE_PX) return;
+      if (ax > ay) move(dx > 0 ? "right" : "left");
+      else move(dy > 0 ? "down" : "up");
+    }
+
+    boardEl.addEventListener("pointerup", endSwipe);
+    boardEl.addEventListener("pointercancel", () => (active = null));
+  }
+
   newBtn.addEventListener("click", () => newGame());
   contBtn.addEventListener("click", async () => {
     await loadSave();
@@ -486,6 +519,7 @@
 
   window.addEventListener("resize", () => renderAllTiles());
   document.addEventListener("keydown", onKeyDown, { passive: false });
+  bindSwipeControls();
 
   (async () => {
     contBtn.disabled = true;

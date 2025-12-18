@@ -9,6 +9,8 @@ if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true) {
 <!DOCTYPE html>
 <html lang="<?= htmlentities(minichat_html_lang()) ?>">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlentities(t("admin_login_title")) ?></title>
     <link rel="stylesheet" href="styles.css">
 </head>

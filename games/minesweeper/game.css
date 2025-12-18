@@ -63,14 +63,16 @@
     background: rgba(255, 255, 255, 0.03);
     overflow: auto;
     max-width: 100%;
+    touch-action: pan-x pan-y;
+    overscroll-behavior: contain;
 }
 
 .ms-cell {
     width: var(--cell);
     height: var(--cell);
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.05));
     color: #e2e8f0;
     display: grid;
     place-items: center;
@@ -78,6 +80,7 @@
     user-select: none;
     cursor: pointer;
     transition: transform 120ms ease, background 150ms ease, border-color 150ms ease;
+    touch-action: manipulation;
 }
 
 .ms-cell:hover {
@@ -86,10 +89,15 @@
 }
 
 .ms-cell.revealed {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(2, 6, 23, 0.35);
+    border-color: rgba(255, 255, 255, 0.10);
     cursor: default;
     transform: none;
+}
+
+.ms-cell.revealed.empty {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.10), rgba(124, 58, 237, 0.06));
+    border-color: rgba(34, 211, 238, 0.26);
 }
 
 .ms-cell.flagged {

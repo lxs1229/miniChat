@@ -51,7 +51,10 @@ $mdp    = $_POST['mdp'] ?? '';
 
 if ($pseudo === '' || $mdp === '') {
     $_SESSION['login_error'] = "Champs manquants";
-    header("Location: index.html");
+    $next = safeNextRedirect();
+    $back = "index.html?lang=" . urlencode(minichat_lang());
+    if ($next) $back .= "&next=" . urlencode($next);
+    header("Location: " . $back);
     exit;
 }
 
@@ -64,7 +67,10 @@ $userRow = $stmt->fetch();
 
 if (!$userRow) {
     $_SESSION['login_error'] = "Pseudo inconnu";
-    header("Location: index.html");
+    $next = safeNextRedirect();
+    $back = "index.html?lang=" . urlencode(minichat_lang());
+    if ($next) $back .= "&next=" . urlencode($next);
+    header("Location: " . $back);
     exit;
 }
 
@@ -112,5 +118,8 @@ if ($mdp === $dbPassword) {
    7) Échec
 ====================================================== */
 $_SESSION['login_error'] = "Mot de passe incorrect";
-header("Location: index.html");
+$next = safeNextRedirect();
+$back = "index.html?lang=" . urlencode(minichat_lang());
+if ($next) $back .= "&next=" . urlencode($next);
+header("Location: " . $back);
 exit;

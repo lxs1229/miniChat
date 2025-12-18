@@ -4,7 +4,7 @@ require __DIR__ . "/i18n.php";
 
 // Redirection si pas connecté
 if (!isset($_SESSION['pseudo'])) {
-    header("Location: index.html");
+    header("Location: /index.html?lang=" . urlencode(minichat_lang()) . "&next=" . urlencode("/chat.php"));
     exit;
 }
 
@@ -60,6 +60,8 @@ $messages = array_reverse($stmt->fetchAll());  // plus ancien → plus récent
             <div class="right">
                 <div class="pill"><?= htmlentities(t("connected_as", ["pseudo" => $pseudo])) ?></div>
                 <?= render_lang_switcher() ?>
+                <a class="btn btn-secondary" href="leaderboard.php"><?= htmlentities(t("nav_leaderboard")) ?></a>
+                <a class="btn btn-secondary" href="profile.php"><?= htmlentities(t("nav_profile")) ?></a>
                 <a class="btn btn-secondary" href="rooms.php"><?= htmlentities(t("nav_rooms")) ?></a>
                 <a class="btn btn-secondary" href="logout.php"><?= htmlentities(t("nav_logout")) ?></a>
             </div>

@@ -29,9 +29,12 @@ $isLoggedIn = $pseudo !== null && $pseudo !== "";
                 <?= render_lang_switcher() ?>
                 <?php if ($isLoggedIn): ?>
                     <div class="pill"><?= htmlentities(t("connected_as", ["pseudo" => $pseudo])) ?></div>
+                    <a class="btn btn-secondary" href="/leaderboard.php"><?= htmlentities(t("nav_leaderboard")) ?></a>
+                    <a class="btn btn-secondary" href="/profile.php"><?= htmlentities(t("nav_profile")) ?></a>
                     <a class="btn btn-secondary" href="/rooms.php"><?= htmlentities(t("rooms_title")) ?></a>
                     <a class="btn btn-secondary" href="/logout.php"><?= htmlentities(t("nav_logout")) ?></a>
                 <?php else: ?>
+                    <a class="btn btn-secondary" href="/leaderboard.php"><?= htmlentities(t("nav_leaderboard")) ?></a>
                     <a class="btn btn-secondary" href="/index.html?lang=<?= urlencode(minichat_lang()) ?>">Home</a>
                 <?php endif; ?>
             </div>
